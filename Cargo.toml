@@ -2,8 +2,13 @@
 name = "vodbot"
 version = "0.1.0"
 authors = ["Logan Hickok-Dickson <self@notquiteapex.net>"]
+repository = "https://github.com/NotQuiteApex/VodBot"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ansi_term = "0.12.1"
+clap = "2.33.3"
+dirs = "3.0.1"
+serde_json = "1.0"
