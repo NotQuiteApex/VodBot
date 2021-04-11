@@ -1,11 +1,32 @@
+// VodBot (c) 2020-21 Logan "NotQuiteApex" Hickok-Dickson
+
+use std::fs;
+
 extern crate clap;
 extern crate dirs;
 use clap::{Arg, App, SubCommand};
+
+mod util;
 
 fn main() {
 	// Load the environment variables from cargo for this info.
 	const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
 	const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
+
+	// Get the .vodbot dir.
+	// Error if the home directory does not exist.
+	if dirs::home_dir().is_none() {
+		util::exit_prog(util::ExitStat::MissingHomeDirectory, Some("Cannot find home directory."));
+	}
+
+	// Create base directory.
+	let mut vodbot_dir = dirs::home_dir().unwrap(); vodbot_dir.push(".vodbot");
+	match fs::create_dir_all(&vodbot_dir) {
+		Err(_error) => {
+			util::exit_prog(util::ExitStat::MissingHomeDirectory, Some("Cannot create `.vodbot` directory."));
+		},
+		_ => ()
+	}
 
 	// Run the argument parser.
 	let matches = App::new("VodBot")
@@ -33,7 +54,14 @@ fn main() {
 
 		.get_matches();
 	
-	let config_path = matches.value_of("config").unwrap_or("/default/location/conf.json");
+	let mut default_config_path = vodbot_dir.clone(); default_config_path.push("conf.json");
+	let config_path = matches.value_of("config").unwrap_or(default_config_path.to_str().unwrap());
 
-	//println!("Hello, world! I'm VodBot!");
+	if let Some(matches) = matches.subcommand_matches("pull") {
+		println!("pull command go!")
+	} else if let Some(matches) = matches.subcommand_matches("stage") {
+		println!("stage command active!")
+	} else if let Some(matches) = matches.subcommand_matches("upload") {
+		println!("upload command initiate!")
+	}
 }
