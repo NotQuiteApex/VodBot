@@ -7,6 +7,11 @@ extern crate dirs;
 use clap::{Arg, App, SubCommand};
 
 mod util;
+mod commands {
+	pub mod pull;
+	pub mod stage;
+	pub mod upload;
+}
 
 fn main() {
 	// Load the environment variables from cargo for this info.
@@ -38,30 +43,74 @@ fn main() {
 			.long("config")
 			.value_name("FILE")
 			.help("Sets the location of the config file.")
-			.takes_value(true))
-
+			.takes_value(true)
+		)
+		// Pull command, downloads VODs or Clips (or both).
 		.subcommand(SubCommand::with_name("pull")
 			.about("Pulls VODs or Clips from Twitch")
 			.arg(Arg::with_name("type")
-				.help("Type of content to pull, such as VODs, Clips, or both.")
-				))
-
+				.possible_values(&["vods", "clips", "both"])
+				.help("Type of content to pull.")
+			)
+		)
+		// Stage command, for staging VODs/Clips for slicing/uploading.
 		.subcommand(SubCommand::with_name("stage")
-			.about("Stages VODs and Clips for slicing/uploading"))
-
+			.about("Stages VODs and Clips for slicing/uploading")
+			// Adding a new stage.
+			.subcommand(SubCommand::with_name("add")
+				.about("Add a stage with a VOD or Clip ID.")
+				.arg(Arg::with_name("id")
+					.required(true)
+					.help("ID of the VOD or Clip to stage.")
+				)
+			)
+			// Editing an existing stage.
+			.subcommand(SubCommand::with_name("edit")
+				.about("Edit an existing stage with its ID.")
+				.arg(Arg::with_name("id")
+					.required(true)
+					.help("ID of the stage to edit.")
+				)
+			)
+			// Listing stages or getting details of a specific stage.
+			.subcommand(SubCommand::with_name("list")
+				.about("List current stages, or display info of a specific stage with an ID.")
+				.arg(Arg::with_name("id")
+					.help("ID of the stage to view. Optional.")
+				)
+			)
+			// Removing an existing stage.
+			.subcommand(SubCommand::with_name("rm")
+				.about("Remove an existing stage with an ID.")
+				.arg(Arg::with_name("id")
+					.required(true)
+					.help("ID of the stage to remove.")
+				)
+			)
+		)
+		// Upload command, for uploading staged data to YouTube.
 		.subcommand(SubCommand::with_name("upload")
-			.about("Uploads stages to YouTube"))
+			.about("Uploads stages to YouTube")
+			.arg(Arg::with_name("id")
+				.required(true)
+				.help("ID of the stage to upload; \"all\" to upload all stages; \"logout\" to logout of the YouTube account.")
+			)
+		)
 
 		.get_matches();
 	
+	// Load config.
 	let mut default_config_path = vodbot_dir.clone(); default_config_path.push("conf.json");
 	let config_path = matches.value_of("config").unwrap_or(default_config_path.to_str().unwrap());
+	println!("conf path: {}", config_path);
+
 
 	if let Some(matches) = matches.subcommand_matches("pull") {
-		println!("pull command go!")
+		commands::pull::run(matches);
 	} else if let Some(matches) = matches.subcommand_matches("stage") {
-		println!("stage command active!")
-	} else if let Some(matches) = matches.subcommand_matches("upload") {
+		commands::stage::run(matches);
+	} else if let Some(_matches) = matches.subcommand_matches("upload") {
+		// First check if the ID is allowed (is a stage ID, is all, is logout)
 		println!("upload command initiate!")
 	}
 }
