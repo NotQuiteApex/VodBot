@@ -1,10 +1,14 @@
 // VodBot (c) 2020-21 Logan "NotQuiteApex" Hickok-Dickson
 
 use std::fs;
+use std::path::Path;
 
 extern crate clap;
 extern crate dirs;
+extern crate serde_json;
+
 use clap::{Arg, App, SubCommand};
+use serde_json::Value;
 
 mod util;
 mod commands {
@@ -21,15 +25,13 @@ fn main() {
 	// Get the .vodbot dir.
 	// Error if the home directory does not exist.
 	if dirs::home_dir().is_none() {
-		util::exit_prog(util::ExitStat::MissingHomeDirectory, Some("Cannot find home directory."));
+		panic!("Cannot find home directory.")
 	}
 
 	// Create base directory.
 	let mut vodbot_dir = dirs::home_dir().unwrap(); vodbot_dir.push(".vodbot");
 	match fs::create_dir_all(&vodbot_dir) {
-		Err(_error) => {
-			util::exit_prog(util::ExitStat::MissingHomeDirectory, Some("Cannot create `.vodbot` directory."));
-		},
+		Err(why) => {panic!("Cannot create `.vodbot` in home directory. {}", why)},
 		_ => ()
 	}
 
@@ -43,16 +45,13 @@ fn main() {
 			.long("config")
 			.value_name("FILE")
 			.help("Sets the location of the config file.")
-			.takes_value(true)
-		)
+			.takes_value(true))
 		// Pull command, downloads VODs or Clips (or both).
 		.subcommand(SubCommand::with_name("pull")
 			.about("Pulls VODs or Clips from Twitch")
 			.arg(Arg::with_name("type")
 				.possible_values(&["vods", "clips", "both"])
-				.help("Type of content to pull.")
-			)
-		)
+				.help("Type of content to pull.")))
 		// Stage command, for staging VODs/Clips for slicing/uploading.
 		.subcommand(SubCommand::with_name("stage")
 			.about("Stages VODs and Clips for slicing/uploading")
@@ -61,56 +60,55 @@ fn main() {
 				.about("Add a stage with a VOD or Clip ID.")
 				.arg(Arg::with_name("id")
 					.required(true)
-					.help("ID of the VOD or Clip to stage.")
-				)
-			)
+					.help("ID of the VOD or Clip to stage.")))
 			// Editing an existing stage.
 			.subcommand(SubCommand::with_name("edit")
 				.about("Edit an existing stage with its ID.")
 				.arg(Arg::with_name("id")
 					.required(true)
-					.help("ID of the stage to edit.")
-				)
-			)
+					.help("ID of the stage to edit.")))
 			// Listing stages or getting details of a specific stage.
 			.subcommand(SubCommand::with_name("list")
 				.about("List current stages, or display info of a specific stage with an ID.")
 				.arg(Arg::with_name("id")
-					.help("ID of the stage to view. Optional.")
-				)
-			)
+					.help("ID of the stage to view. Optional.")))
 			// Removing an existing stage.
 			.subcommand(SubCommand::with_name("rm")
 				.about("Remove an existing stage with an ID.")
 				.arg(Arg::with_name("id")
 					.required(true)
-					.help("ID of the stage to remove.")
-				)
-			)
-		)
+					.help("ID of the stage to remove."))))
 		// Upload command, for uploading staged data to YouTube.
 		.subcommand(SubCommand::with_name("upload")
 			.about("Uploads stages to YouTube")
 			.arg(Arg::with_name("id")
 				.required(true)
-				.help("ID of the stage to upload; \"all\" to upload all stages; \"logout\" to logout of the YouTube account.")
-			)
-		)
-
+				.help("ID of the stage to upload; \"all\" to upload all stages; \
+						\"logout\" to logout of the YouTube account.")))
+		// All done, parse input and get matches.
 		.get_matches();
 	
 	// Load config.
-	let mut default_config_path = vodbot_dir.clone(); default_config_path.push("conf.json");
-	let config_path = matches.value_of("config").unwrap_or(default_config_path.to_str().unwrap());
-	println!("conf path: {}", config_path);
+	let mut default_config_path = vodbot_dir.clone();
+	default_config_path.push("conf.json");
 
+	let config_path = Path::new(
+		matches.value_of("config")
+		.unwrap_or(default_config_path.to_str().unwrap()));
+	
+	if !config_path.exists() {
+		println!("Could not find config, attempting to create one...");
+		util::create_conf(config_path);
+	}
 
+	let config: Value = util::load_conf(config_path);
+	
+	// Run the commands 
 	if let Some(matches) = matches.subcommand_matches("pull") {
-		commands::pull::run(matches);
+		commands::pull::run(matches, config);
 	} else if let Some(matches) = matches.subcommand_matches("stage") {
-		commands::stage::run(matches);
-	} else if let Some(_matches) = matches.subcommand_matches("upload") {
-		// First check if the ID is allowed (is a stage ID, is all, is logout)
-		println!("upload command initiate!")
+		commands::stage::run(matches, config);
+	} else if let Some(matches) = matches.subcommand_matches("upload") {
+		commands::upload::run(matches, config);
 	}
 }
