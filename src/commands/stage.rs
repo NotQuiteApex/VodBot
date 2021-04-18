@@ -1,9 +1,9 @@
 // Command to stage videos for slicing/upload
 
-use clap::ArgMatches;
-use serde_json::Value;
+use super::super::util;
 
-pub fn run(args: &ArgMatches, _config: Value) {
+
+pub fn run(args: &clap::ArgMatches, mut config: serde_json::Value) -> Result<(), util::ExitMsg> {
 	if let Some(_matches) = args.subcommand_matches("add") {
 
 	} else if let Some(_matches) = args.subcommand_matches("edit") {
@@ -13,5 +13,7 @@ pub fn run(args: &ArgMatches, _config: Value) {
 	} else if let Some(_matches) = args.subcommand_matches("rm") {
 
 	}
-	println!("stage command active!")
+	println!("stage command active!");
+
+	Ok(())
 }

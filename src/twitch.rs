@@ -3,35 +3,35 @@
 use reqwest::blocking::Client;
 
 
-struct Channel<'a> {
-	id: &'a str,
-	login: &'a str,
-	display_name: &'a str,
+struct Channel {
+	id: String,
+	login: String,
+	display_name: String,
 
-	created_at: &'a str,
+	created_at: String,
 }
 
-struct VodData<'a> {
-	id: &'a str,
-	title: &'a str,
-	created_at: &'a str,
-	duration: &'a str,
+struct VodData {
+	id: String,
+	title: String,
+	created_at: String,
+	duration: String,
 
-	streamer_id: &'a str,
-	streamer_name: &'a str,
+	streamer_id: String,
+	streamer_name: String,
 }
 
-struct ClipData<'a> {
-	id: &'a str,
-	title: &'a str,
-	created_at: &'a str,
+struct ClipData {
+	id: String,
+	title: String,
+	created_at: String,
 	view_count: u64,
 
-	streamer_id: &'a str,
-	streamer_name: &'a str,
+	streamer_id: String,
+	streamer_name: String,
 
-	clipper_id: &'a str,
-	clipper_name: &'a str,
+	clipper_id: String,
+	clipper_name: String,
 }
 
 

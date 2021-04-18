@@ -6,6 +6,32 @@ use std::path;
 use std::fs;
 use std::io::BufReader;
 
+#[derive(Copy, Clone)]
+pub enum ExitCode {
+	_CleanExit,
+	MissingFromConfig,
+}
+
+pub struct ExitMsg {
+	pub msg: &'static str,
+	pub code: ExitCode,
+}
+
+
+macro_rules! load_key_config {
+	($var:ident, $type:ty, $conf:ident, $key:expr) => {
+		let $var: $type;
+		if let Ok(j) = serde_json::from_value($conf[$key].take()) {
+			$var = j;
+		} else {
+			return Err( util::ExitMsg{
+				code: util::ExitCode::MissingFromConfig,
+				msg: concat!("Cannot load key ", stringify!($key), " from config.")
+			});
+		}
+	};
+}
+
 
 const DEFAULT_CONFIG: &str = r#"
 {

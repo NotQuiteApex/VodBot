@@ -6,10 +6,13 @@ use std::path::Path;
 extern crate clap;
 extern crate dirs;
 extern crate serde_json;
+extern crate ansi_term;
 
+use ansi_term::Color::{Red, Yellow};
 use clap::{Arg, App, SubCommand};
 use serde_json::Value;
 
+#[macro_use]
 mod util;
 mod twitch;
 mod commands {
@@ -105,11 +108,22 @@ fn main() {
 	let config: Value = util::load_conf(config_path);
 	
 	// Run the commands 
+	let mut res: Result<(), util::ExitMsg> = Ok(());
 	if let Some(matches) = matches.subcommand_matches("pull") {
-		commands::pull::run(matches, config);
+		res = commands::pull::run(matches, config);
 	} else if let Some(matches) = matches.subcommand_matches("stage") {
-		commands::stage::run(matches, config);
+		res = commands::stage::run(matches, config);
 	} else if let Some(matches) = matches.subcommand_matches("upload") {
-		commands::upload::run(matches, config);
+		res = commands::upload::run(matches, config);
+	}
+
+	if res.is_err() {
+		let err = res.unwrap_err();
+		println!("{} {} {}",
+			Red.bold().paint("Error! ("),
+			Yellow.bold().paint(format!("{}", err.code as i32)),
+			Red.bold().paint(format!(") {}", err.msg))
+		);
+		std::process::exit(err.code as i32);
 	}
 }
