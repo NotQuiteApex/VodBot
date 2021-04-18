@@ -11,6 +11,7 @@ use clap::{Arg, App, SubCommand};
 use serde_json::Value;
 
 mod util;
+mod twitch;
 mod commands {
 	pub mod pull;
 	pub mod stage;

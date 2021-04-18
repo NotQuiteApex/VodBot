@@ -9,36 +9,36 @@ use std::io::BufReader;
 
 const DEFAULT_CONFIG: &str = r#"
 {
-  "twitch_channels": [ "46moura",
-    "alkana", "batkigu", "hylianswordsman1"
-    "juicibit", "michiri9", "notquiteapex",
-    "pissyellowcrocs", "percy_creates", "voobo",
-  ],
-  
-  "twitch_client_id": "[[INSERT CLIENT ID HERE]]",
-  "twitch_client_secret": "[[INSERT CLIENT SECRET HERE]]",
-  
-  "stage_timezone": "US/Eastern",
-  "stage_format": {
-    "watch": "-- Watch live at {links}",
-    "discord": "-- Join the Discord https://discord.gg/v2t6uag",
-    "credits": "\n{watch}\n{discord}"
-  },
-  
-  "youtube_client_path": "{vodbot}/yt-client.json",
-  "youtube_pickle_path": "{vodbot}/yt-pickle.pikl",
+	"twitch_channels": [ "46moura",
+		"alkana", "batkigu", "hylianswordsman1"
+		"juicibit", "michiri9", "notquiteapex",
+		"pissyellowcrocs", "percy_creates", "voobo",
+	],
+	
+	"twitch_client_id": "[[INSERT CLIENT ID HERE]]",
+	"twitch_client_secret": "[[INSERT CLIENT SECRET HERE]]",
+	
+	"stage_timezone": "US/Eastern",
+	"stage_format": {
+		"watch": "-- Watch live at {links}",
+		"discord": "-- Join the Discord https://discord.gg/v2t6uag",
+		"credits": "\n{watch}\n{discord}"
+	},
+	
+	"youtube_client_path": "{vodbot}/yt-client.json",
+	"youtube_pickle_path": "{vodbot}/yt-pickle.pikl",
 
-  "vod_dir": "{vodbot}/vods",
-  "clip_dir": "{vodbot}/clips",
-  "temp_dir": "{vodbot}/temp",
-  "stage_dir": "{vodbot}/stage",
-  }
+	"vod_dir": "{vodbot}/vods",
+	"clip_dir": "{vodbot}/clips",
+	"temp_dir": "{vodbot}/temp",
+	"stage_dir": "{vodbot}/stage",
+}
 "#;
 
 
 pub fn create_conf(conf_path: &path::Path) {
 	fs::write(conf_path, DEFAULT_CONFIG)
-		.expect(format!("Cannot write to config file at {}.", conf_path.display()));
+		.expect(format!("Cannot write to config file at {}.", conf_path.display()).as_str());
 	
 	panic!("Created config at {}, please edit it to continue. Exiting...", conf_path.display())
 }
