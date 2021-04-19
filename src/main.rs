@@ -1,6 +1,5 @@
 // VodBot (c) 2020-21 Logan "NotQuiteApex" Hickok-Dickson
 
-use std::fs;
 use std::path::Path;
 
 extern crate clap;
@@ -21,7 +20,8 @@ mod commands {
 }
 
 
-fn deffered_main() -> Result<(), util::ExitMsg> {// Load the environment variables from cargo for this info.
+fn deffered_main() -> Result<(), util::ExitMsg> {
+	// Load the environment variables from cargo for this info.
 	const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
 	const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
@@ -36,13 +36,7 @@ fn deffered_main() -> Result<(), util::ExitMsg> {// Load the environment variabl
 
 	// Create base directory.
 	let mut vodbot_dir = dirs::home_dir().unwrap(); vodbot_dir.push(".vodbot");
-	match fs::create_dir_all(&vodbot_dir) {
-		Err(why) => {return Err(util::ExitMsg{
-			code: util::ExitCode::CannotCreateDir,
-			msg: format!("Cannot create directory `{}`, reason `{}`.", &vodbot_dir.display(), why)
-		})},
-		_ => ()
-	}
+	util::create_dir(&vodbot_dir)?;
 
 	// Run the argument parser.
 	let matches = App::new("VodBot")

@@ -25,6 +25,11 @@ pub fn run(args: &clap::ArgMatches, mut config: serde_json::Value) -> Result<(),
 	let vods_dir = Path::new(vods_dir.as_str());
 	let clips_dir = Path::new(clips_dir.as_str());
 
+	// Create the necessary directories.
+	util::create_dir(&temp_dir)?;
+	util::create_dir(&vods_dir)?;
+	util::create_dir(&clips_dir)?;
+
 	// Get access_token from Twitch, used for using the APIs.
 	let client_token = twitch::get_access_token(&client, &client_id, &client_secret)?;
 

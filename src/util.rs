@@ -2,7 +2,7 @@
 
 extern crate serde_json;
 
-use std::path;
+use std::path::Path;
 use std::fs;
 use std::io::BufReader;
 
@@ -13,7 +13,7 @@ pub enum ExitCode {
 	CannotCreateDir,
 	NoConnection,
 	CannotParseResponse,
-	CannotFindAccessToken
+	CannotFindAccessToken,
 }
 
 pub struct ExitMsg {
@@ -51,7 +51,7 @@ const DEFAULT_CONFIG: &str = r#"
 "#;
 
 
-pub fn create_conf(conf_path: &path::Path) {
+pub fn create_conf(conf_path: &Path) {
 	fs::write(conf_path, DEFAULT_CONFIG)
 		.expect(format!("Cannot write to config file at {}.", conf_path.display()).as_str());
 	
@@ -59,13 +59,14 @@ pub fn create_conf(conf_path: &path::Path) {
 }
 
 
-pub fn load_conf(conf_path: &path::Path) -> serde_json::Value {
+pub fn load_conf(conf_path: &Path) -> serde_json::Value {
 	let config_file = match fs::File::open(conf_path) {
 		Err(why) => panic!("Cannot open config file. {}", why),
 		Ok(file) => file
 	};
 	let reader = BufReader::new(config_file);
-	let conf: serde_json::Value = serde_json::from_reader(reader).expect("Could not parse config.");
+	let conf: serde_json::Value = serde_json::from_reader(reader)
+		.expect("Could not parse config.");
 
 	// TODO: Do some checks for values.
 
@@ -93,5 +94,19 @@ pub fn load_list_config(conf: &mut serde_json::Value, key: &str) -> Result<Vec<S
 			code: ExitCode::MissingFromConfig,
 			msg: format!("Cannot load key `{}` from config as a string.", key)
 		});
+	}
+}
+
+
+pub fn create_dir(dir_path: &Path) -> Result<(), ExitMsg> {
+	match fs::create_dir_all(&dir_path) {
+		Err(why) => {
+			return Err(ExitMsg{
+				code: ExitCode::CannotCreateDir,
+				msg: format!("Cannot create directory `{}`, reason: \"{}\".", 
+					&dir_path.display(), why)
+			})
+		},
+		_ => Ok(())
 	}
 }
