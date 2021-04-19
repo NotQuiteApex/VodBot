@@ -6,7 +6,7 @@ use super::super::twitch;
 use super::super::util;
 
 
-pub fn run(args: &clap::ArgMatches, mut config: serde_json::Value) -> Result<(), util::ExitMsg> {
+pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::ExitMsg> {
 	// Get content type.
 	let pull_type = args.value_of("type").unwrap_or("both");
 	
@@ -14,16 +14,12 @@ pub fn run(args: &clap::ArgMatches, mut config: serde_json::Value) -> Result<(),
 	let client = reqwest::blocking::Client::new();
 
 	// Pull necessary fields from the config
-	let channel_ids = util::load_list_config(&mut config, "twitch_channels")?;
-	let client_id = util::load_string_config(&mut config, "twitch_client_id")?;
-	let client_secret = util::load_string_config(&mut config, "twitch_client_secret")?;
-	let temp_dir = util::load_string_config(&mut config, "temp_dir")?;
-	let vods_dir = util::load_string_config(&mut config, "vods_dir")?;
-	let clips_dir = util::load_string_config(&mut config, "clips_dir")?;
-
-	let temp_dir = Path::new(temp_dir.as_str());
-	let vods_dir = Path::new(vods_dir.as_str());
-	let clips_dir = Path::new(clips_dir.as_str());
+	let channel_ids = config.twitch_channels;
+	let client_id = config.twitch_client_id;
+	let client_secret = config.twitch_client_secret;
+	let temp_dir = Path::new(&config.temp_dir);
+	let vods_dir = Path::new(&config.vods_dir);
+	let clips_dir = Path::new(&config.clips_dir);
 
 	// Create the necessary directories.
 	util::create_dir(&temp_dir)?;

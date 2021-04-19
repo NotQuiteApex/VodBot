@@ -5,16 +5,20 @@ extern crate serde_json;
 use std::path::Path;
 use std::fs;
 use std::io::BufReader;
+use std::collections::HashMap;
+use serde::{Serialize, Deserialize};
 
 #[derive(Copy, Clone)]
 pub enum ExitCode {
 	_CleanExit,
-	MissingFromConfig,
 	CannotCreateDir,
 	NoConnection,
 	CannotParseResponse,
 	CannotFindAccessToken,
 	MissingConfigChannels,
+	CannotWriteConfig,
+	WroteDefaultConfig,
+	CannotParseConfig,
 }
 
 pub struct ExitMsg {
@@ -22,6 +26,25 @@ pub struct ExitMsg {
 	pub code: ExitCode,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+	pub twitch_channels: Vec<String>,
+	
+	pub twitch_client_id: String,
+	pub twitch_client_secret: String,
+
+	pub stage_timezone: String,
+	pub stage_format: HashMap<String, String>,
+
+	pub youtube_client_path: String,
+	pub youtube_pickle_path: String,
+
+	pub temp_dir: String,
+	pub stage_dir: String,
+
+	pub vods_dir: String,
+	pub clips_dir: String,
+}
 
 const DEFAULT_CONFIG: &str = r#"
 {
@@ -52,50 +75,39 @@ const DEFAULT_CONFIG: &str = r#"
 "#;
 
 
-pub fn create_conf(conf_path: &Path) {
-	fs::write(conf_path, DEFAULT_CONFIG)
-		.expect(format!("Cannot write to config file at {}.", conf_path.display()).as_str());
-	
-	panic!("Created config at {}, please edit it to continue. Exiting...", conf_path.display())
+pub fn create_conf(conf_path: &Path) -> Result<(), ExitMsg> {
+	match fs::write(conf_path, DEFAULT_CONFIG) {
+		Err(why) => Err(ExitMsg{
+			code: ExitCode::CannotWriteConfig,
+			msg: format!("Cannot write to config file at `{}`, reason: \"{}\".", conf_path.display(), why)
+		}),
+		Ok(_) => Err(ExitMsg{
+			code: ExitCode::WroteDefaultConfig,
+			msg: format!("Wrote default config file at `{}`, fill it out to continue.", conf_path.display())
+		}),
+	}?
 }
 
 
-pub fn load_conf(conf_path: &Path) -> serde_json::Value {
+pub fn load_conf(conf_path: &Path) -> Result<Config, ExitMsg> {
 	let config_file = match fs::File::open(conf_path) {
 		Err(why) => panic!("Cannot open config file. {}", why),
 		Ok(file) => file
 	};
+
 	let reader = BufReader::new(config_file);
-	let conf: serde_json::Value = serde_json::from_reader(reader)
-		.expect("Could not parse config.");
+
+	let json: serde_json::Result<Config> = serde_json::from_reader(reader);
+	if let Ok(config) = json {
+		Ok(config)
+	} else {
+		Err(ExitMsg{
+			code: ExitCode::CannotParseConfig,
+			msg: String::from("Cannot parse config.")
+		})
+	}
 
 	// TODO: Do some checks for values.
-
-	conf
-}
-
-
-pub fn load_string_config(conf: &mut serde_json::Value, key: &str) -> Result<String, ExitMsg> {
-	if let Ok(j) = serde_json::from_value(conf[key].take()) {
-		Ok(j)
-	} else {
-		Err(ExitMsg{
-			code: ExitCode::MissingFromConfig,
-			msg: format!("Cannot load key `{}` from config as a string.", key)
-		})
-	}
-}
-
-
-pub fn load_list_config(conf: &mut serde_json::Value, key: &str) -> Result<Vec<String>, ExitMsg> {
-	if let Ok(j) = serde_json::from_value(conf[key].take()) {
-		Ok(j)
-	} else {
-		Err(ExitMsg{
-			code: ExitCode::MissingFromConfig,
-			msg: format!("Cannot load key `{}` from config as a string.", key)
-		})
-	}
 }
 
 

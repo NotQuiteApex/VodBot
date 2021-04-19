@@ -9,7 +9,6 @@ extern crate ansi_term;
 
 use ansi_term::Color::{Red, Yellow};
 use clap::{Arg, App, SubCommand};
-use serde_json::Value;
 
 mod util;
 mod twitch;
@@ -101,10 +100,10 @@ fn deffered_main() -> Result<(), util::ExitMsg> {
 	
 	if !config_path.exists() {
 		println!("Could not find config, attempting to create one...");
-		util::create_conf(config_path);
+		util::create_conf(config_path)?;
 	}
 
-	let config: Value = util::load_conf(config_path);
+	let config: util::Config = util::load_conf(config_path)?;
 	
 	// Run the commands
 	if let Some(matches) = matches.subcommand_matches("pull") {
