@@ -32,6 +32,7 @@ pub fn run(args: &clap::ArgMatches, mut config: serde_json::Value) -> Result<(),
 
 	// Get access_token from Twitch, used for using the APIs.
 	let client_token = twitch::get_access_token(&client, &client_id, &client_secret)?;
+	let channels = twitch::get_channels(&channel_ids, &client, &client_id, &client_token)?;
 
 	println!("pull-type: {}", pull_type);
 	println!("temp:  {}", temp_dir.display());
@@ -45,6 +46,11 @@ pub fn run(args: &clap::ArgMatches, mut config: serde_json::Value) -> Result<(),
 	print!("channels: ");
 	for name in channel_ids.iter() {
 		print!("{} ", name);
+	}
+	println!();
+	print!("found: ");
+	for channel in channels.iter() {
+		print!("{} ", channel.login);
 	}
 	println!();
 

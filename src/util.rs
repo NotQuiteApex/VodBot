@@ -14,6 +14,7 @@ pub enum ExitCode {
 	NoConnection,
 	CannotParseResponse,
 	CannotFindAccessToken,
+	MissingConfigChannels,
 }
 
 pub struct ExitMsg {
@@ -78,10 +79,10 @@ pub fn load_string_config(conf: &mut serde_json::Value, key: &str) -> Result<Str
 	if let Ok(j) = serde_json::from_value(conf[key].take()) {
 		Ok(j)
 	} else {
-		return Err( ExitMsg{
+		Err(ExitMsg{
 			code: ExitCode::MissingFromConfig,
 			msg: format!("Cannot load key `{}` from config as a string.", key)
-		});
+		})
 	}
 }
 
@@ -90,10 +91,10 @@ pub fn load_list_config(conf: &mut serde_json::Value, key: &str) -> Result<Vec<S
 	if let Ok(j) = serde_json::from_value(conf[key].take()) {
 		Ok(j)
 	} else {
-		return Err( ExitMsg{
+		Err(ExitMsg{
 			code: ExitCode::MissingFromConfig,
 			msg: format!("Cannot load key `{}` from config as a string.", key)
-		});
+		})
 	}
 }
 
@@ -101,7 +102,7 @@ pub fn load_list_config(conf: &mut serde_json::Value, key: &str) -> Result<Vec<S
 pub fn create_dir(dir_path: &Path) -> Result<(), ExitMsg> {
 	match fs::create_dir_all(&dir_path) {
 		Err(why) => {
-			return Err(ExitMsg{
+			Err(ExitMsg{
 				code: ExitCode::CannotCreateDir,
 				msg: format!("Cannot create directory `{}`, reason: \"{}\".", 
 					&dir_path.display(), why)
