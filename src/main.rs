@@ -12,7 +12,6 @@ use ansi_term::Color::{Red, Yellow};
 use clap::{Arg, App, SubCommand};
 use serde_json::Value;
 
-#[macro_use]
 mod util;
 mod twitch;
 mod commands {
@@ -21,21 +20,27 @@ mod commands {
 	pub mod upload;
 }
 
-fn main() {
-	// Load the environment variables from cargo for this info.
+
+fn deffered_main() -> Result<(), util::ExitMsg> {// Load the environment variables from cargo for this info.
 	const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
 	const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
 	// Get the .vodbot dir.
 	// Error if the home directory does not exist.
 	if dirs::home_dir().is_none() {
-		panic!("Cannot find home directory.")
+		return Err(util::ExitMsg{
+			code: util::ExitCode::CannotCreateDir,
+			msg: format!("Cannot locate home directory.")
+		})
 	}
 
 	// Create base directory.
 	let mut vodbot_dir = dirs::home_dir().unwrap(); vodbot_dir.push(".vodbot");
 	match fs::create_dir_all(&vodbot_dir) {
-		Err(why) => {panic!("Cannot create `.vodbot` in home directory. {}", why)},
+		Err(why) => {return Err(util::ExitMsg{
+			code: util::ExitCode::CannotCreateDir,
+			msg: format!("Cannot create directory `{}`, reason `{}`.", &vodbot_dir.display(), why)
+		})},
 		_ => ()
 	}
 
@@ -107,15 +112,21 @@ fn main() {
 
 	let config: Value = util::load_conf(config_path);
 	
-	// Run the commands 
-	let mut res: Result<(), util::ExitMsg> = Ok(());
+	// Run the commands
 	if let Some(matches) = matches.subcommand_matches("pull") {
-		res = commands::pull::run(matches, config);
+		commands::pull::run(matches, config)?
 	} else if let Some(matches) = matches.subcommand_matches("stage") {
-		res = commands::stage::run(matches, config);
+		commands::stage::run(matches, config)?
 	} else if let Some(matches) = matches.subcommand_matches("upload") {
-		res = commands::upload::run(matches, config);
+		commands::upload::run(matches, config)?
 	}
+
+	Ok(())
+}
+
+
+fn main() {
+	let res = deffered_main();
 
 	if res.is_err() {
 		let err = res.unwrap_err();

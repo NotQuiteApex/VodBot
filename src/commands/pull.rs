@@ -1,5 +1,7 @@
 // Command to pull VODs and Clips from Twitch.
 
+use std::path::Path;
+
 use super::super::twitch;
 use super::super::util;
 
@@ -12,16 +14,34 @@ pub fn run(args: &clap::ArgMatches, mut config: serde_json::Value) -> Result<(),
 	let client = reqwest::blocking::Client::new();
 
 	// Pull necessary fields from the config
-	load_key_config!(channel_ids, Vec<String>, config, "twitch_channels");
-	load_key_config!(client_id, String, config, "twitch_client_id");
-	load_key_config!(client_secret, String, config, "twitch_client_secret");
+	let channel_ids = util::load_list_config(&mut config, "twitch_channels")?;
+	let client_id = util::load_string_config(&mut config, "twitch_client_id")?;
+	let client_secret = util::load_string_config(&mut config, "twitch_client_secret")?;
+	let temp_dir = util::load_string_config(&mut config, "temp_dir")?;
+	let vods_dir = util::load_string_config(&mut config, "vods_dir")?;
+	let clips_dir = util::load_string_config(&mut config, "clips_dir")?;
+
+	let temp_dir = Path::new(temp_dir.as_str());
+	let vods_dir = Path::new(vods_dir.as_str());
+	let clips_dir = Path::new(clips_dir.as_str());
 
 	// Get access_token from Twitch, used for using the APIs.
-	let client_token = twitch::get_access_token(&client, &client_id, &client_secret);
-	println!("{} {} {}", client_secret, client_secret, client_token);
+	let client_token = twitch::get_access_token(&client, &client_id, &client_secret)?;
+
+	println!("pull-type: {}", pull_type);
+	println!("temp:  {}", temp_dir.display());
+	println!("vods:  {}", vods_dir.display());
+	println!("clips: {}", clips_dir.display());
+	println!();
+	print!("id: {} | ", client_id);
+	print!("secret: {} | ", client_secret);
+	print!("token: {}", client_token);
+	println!(); println!();
+	print!("channels: ");
 	for name in channel_ids.iter() {
-		println!("name: {}", name);
+		print!("{} ", name);
 	}
+	println!();
 
 	// All done, let's bounce
 	Ok(())

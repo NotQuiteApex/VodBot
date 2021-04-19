@@ -10,26 +10,15 @@ use std::io::BufReader;
 pub enum ExitCode {
 	_CleanExit,
 	MissingFromConfig,
+	CannotCreateDir,
+	NoConnection,
+	CannotParseResponse,
+	CannotFindAccessToken
 }
 
 pub struct ExitMsg {
-	pub msg: &'static str,
+	pub msg: String,
 	pub code: ExitCode,
-}
-
-
-macro_rules! load_key_config {
-	($var:ident, $type:ty, $conf:ident, $key:expr) => {
-		let $var: $type;
-		if let Ok(j) = serde_json::from_value($conf[$key].take()) {
-			$var = j;
-		} else {
-			return Err( util::ExitMsg{
-				code: util::ExitCode::MissingFromConfig,
-				msg: concat!("Cannot load key ", stringify!($key), " from config.")
-			});
-		}
-	};
 }
 
 
@@ -81,4 +70,28 @@ pub fn load_conf(conf_path: &path::Path) -> serde_json::Value {
 	// TODO: Do some checks for values.
 
 	conf
+}
+
+
+pub fn load_string_config(conf: &mut serde_json::Value, key: &str) -> Result<String, ExitMsg> {
+	if let Ok(j) = serde_json::from_value(conf[key].take()) {
+		Ok(j)
+	} else {
+		return Err( ExitMsg{
+			code: ExitCode::MissingFromConfig,
+			msg: format!("Cannot load key `{}` from config as a string.", key)
+		});
+	}
+}
+
+
+pub fn load_list_config(conf: &mut serde_json::Value, key: &str) -> Result<Vec<String>, ExitMsg> {
+	if let Ok(j) = serde_json::from_value(conf[key].take()) {
+		Ok(j)
+	} else {
+		return Err( ExitMsg{
+			code: ExitCode::MissingFromConfig,
+			msg: format!("Cannot load key `{}` from config as a string.", key)
+		});
+	}
 }
