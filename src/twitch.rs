@@ -51,40 +51,36 @@ pub fn get_access_token(client: &Client, client_id: &String, client_secret: &Str
 	);
 
 	let res = client.post(url).send();
-
-	if let Ok(response) = res {
-		if let Ok(text) = response.text() {
-			let parse: serde_json::Result<serde_json::Value> = serde_json::from_str(&text);
-			if let Ok(mut json) = parse {
-				let read: serde_json::Result<String> = serde_json::from_value(
-					json["access_token"].take());
-				if let Ok(token) = read {
-					Ok(token)
-				} else {
-					Err(util::ExitMsg{
-						code: util::ExitCode::CannotFindAccessToken,
-						msg: String::from("Cannot read key \"access_token\" \
-							from response from Twitch for auth.")
-					})
-				}
-			} else {
-				Err(util::ExitMsg{
-					code: util::ExitCode::CannotParseResponse,
-					msg: String::from("Cannot parse response from Twitch for auth.")
-				})
-			}
-		} else {
-			Err(util::ExitMsg{
-				code: util::ExitCode::CannotParseResponse,
-				msg: String::from("Cannot read response from Twitch for auth.")
-			})
-		}
-	} else {
-		Err(util::ExitMsg{
-			code: util::ExitCode::NoConnection,
-			msg: String::from("No response from Twitch for auth.")
-		})
+	if let Err(why) = res {
+		return Err( util::ExitMsg{ code: util::ExitCode::NoConnection,
+			msg: format!("No response from Twitch for auth. Reason \"{}\"", why)
+		});
 	}
+
+	let response = res.unwrap().text();
+	if let Err(why) = response {
+		return Err( util::ExitMsg{ code: util::ExitCode::CannotParseResponse,
+			msg: format!("Cannot read response from Twitch for auth. Reason \"{}\"", why)
+		});
+	}
+
+	let parse: serde_json::Result<serde_json::Value> = serde_json::from_str(&response.unwrap());
+	if let Err(why) = parse {
+		return Err( util::ExitMsg{ code: util::ExitCode::CannotParseResponse,
+			msg: format!("Cannot parse response from Twitch for auth. Reason \"{}\"", why)
+		});
+	}
+
+	let mut json = parse.unwrap();
+	let read: serde_json::Result<String> = serde_json::from_value(json["access_token"].take());
+	if let Err(why) = read {
+		return Err( util::ExitMsg{ code: util::ExitCode::CannotParseResponse,
+			msg: format!("Cannot read key \"access_token\" from response from \
+				Twitch for auth. Reason \"{}\"", why)
+		});
+	}
+
+	Ok(read.unwrap())
 }
 
 
@@ -104,37 +100,40 @@ pub fn get_channels(channel_ids: &Vec<String>, cl: &Client, cl_id: &String, cl_t
 		.header("Client-ID", cl_id)
 		.header("Authorization", format!("Bearer {}", cl_tkn))
 		.send();
-		
-	if let Ok(response) = res {
-		if let Ok(text) = response.text() {
-			let parse: serde_json::Result<serde_json::Value> = serde_json::from_str(&text);
-			if let Ok(mut json) = parse {
-				let read: serde_json::Result<Vec<Channel>> = serde_json::from_value(
-					json["data"].take());
-				if let Ok(channels) = read {
-					Ok(channels)
-				} else {
-					Err(util::ExitMsg{
-						code: util::ExitCode::CannotParseResponse,
-						msg: String::from("Cannot pull channels from Twitch response.")
-					})
-				}
-			} else {
-				Err(util::ExitMsg{
-					code: util::ExitCode::CannotParseResponse,
-					msg: String::from("Cannot parse response from Twitch for channels.")
-				})
-			}
-		} else {
-			Err(util::ExitMsg{
-				code: util::ExitCode::CannotParseResponse,
-				msg: String::from("Cannot read response from Twitch for channels.")
-			})
-		}
-	} else {
-		Err(util::ExitMsg{
-			code: util::ExitCode::NoConnection,
-			msg: String::from("No response from Twitch for channels.")
-		})
+	if let Err(why) = res {
+		return Err( util::ExitMsg{ code: util::ExitCode::NoConnection,
+			msg: format!("No response from Twitch for channels. Reason \"{}\"", why)
+		});
 	}
+
+	let response = res.unwrap().text();
+	if let Err(why) = response {
+		return Err( util::ExitMsg{ code: util::ExitCode::CannotParseResponse,
+			msg: format!("Cannot read response from Twitch for channels. Reason \"{}\"", why)
+		});
+	}
+
+	let parse: serde_json::Result<serde_json::Value> = serde_json::from_str(&response.unwrap());
+	if let Err(why) = parse {
+		return Err( util::ExitMsg{ code: util::ExitCode::CannotParseResponse,
+			msg: format!("Cannot parse response from Twitch for channels. Reason \"{}\"", why)
+		});
+	}
+
+	let mut json = parse.unwrap();
+	let read: serde_json::Result<Vec<Channel>> = serde_json::from_value(json["data"].take());
+	if let Err(why) = read {
+		return Err( util::ExitMsg{ code: util::ExitCode::CannotParseResponse,
+			msg: format!("Cannot read key \"access_token\" from response from \
+				Twitch for channels. Reason \"{}\"", why)
+		});
+	}
+
+	Ok(read.unwrap())
 }
+
+
+// pub fn get_channel_vods(channel: &Channel, cl: &Client, cl_id: &String, cl_tkn: &String)
+// -> Result<Vec<VodData>, util::ExitMsg> {
+
+// }

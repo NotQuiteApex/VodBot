@@ -14,11 +14,11 @@ pub enum ExitCode {
 	CannotCreateDir,
 	NoConnection,
 	CannotParseResponse,
-	CannotFindAccessToken,
 	MissingConfigChannels,
 	CannotWriteConfig,
 	WroteDefaultConfig,
 	CannotParseConfig,
+	CannotOpenConfig,
 }
 
 pub struct ExitMsg {
@@ -90,9 +90,15 @@ pub fn create_conf(conf_path: &Path) -> Result<(), ExitMsg> {
 
 
 pub fn load_conf(conf_path: &Path) -> Result<Config, ExitMsg> {
-	let config_file = match fs::File::open(conf_path) {
-		Err(why) => panic!("Cannot open config file. {}", why),
-		Ok(file) => file
+	let config_file: fs::File;
+	match fs::File::open(conf_path) {
+		Err(why) => {
+			return Err(ExitMsg{
+				code: ExitCode::CannotOpenConfig,
+				msg: format!("Cannot open config file. Reason: \"{}\"", why)
+			});
+		},
+		Ok(file) => {config_file = file;}
 	};
 
 	let reader = BufReader::new(config_file);

@@ -39,8 +39,8 @@ fn deffered_main() -> Result<(), util::ExitMsg> {
 
 	// Run the argument parser.
 	let matches = App::new("VodBot")
-		.version(VERSION.unwrap_or("VERSION UNKNOWN"))
 		.author(AUTHORS.unwrap_or("AUTHORS UNKNOWN"))
+		.version(VERSION.unwrap_or("VERSION UNKNOWN"))
 		.about("A VOD and Clip Manager for Twitch.")
 		.arg(Arg::with_name("config")
 			.short("c")
