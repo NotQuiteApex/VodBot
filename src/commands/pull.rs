@@ -5,11 +5,7 @@ use std::path::PathBuf;
 use super::super::twitch;
 use super::super::util;
 
-
-enum VideoType {
-	Vod(twitch::VodData),
-	Clip(twitch::ClipData),
-}
+use ansi_term::Color::{Purple, Cyan, White};
 
 
 pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::ExitMsg> {
@@ -36,24 +32,52 @@ pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::Ex
 	util::create_dir(&clips_dir)?;
 
 	// Get access_token from Twitch, used for using the APIs.
+	print!("{}", White.dimmed().paint("Logging in to Twitch.tv... "));
 	let client_token = twitch::get_access_token(&client, &client_id, &client_secret)?;
 
 	// Get the channel data from Twitch.
+	print!("{}", White.dimmed().paint("Getting User ID's... "));
 	let channels = twitch::get_channels(&channel_ids, &client, &client_id, &client_token)?;
 
+	println!();
+
 	// A place to store videos.
-	let videos: Vec<VideoType> = Vec::new();
+	let mut videos: Vec<twitch::VideoType> = Vec::new();
+	// Info counts
+	let mut total_vod_count: usize = 0;
+	let mut total_clip_count: usize = 0;
 
 	// Start pulling content info of each channel.
 	for channel in channels.iter() {
+		// Info counts
+		let mut vod_count: usize = 0;
+		let mut clip_count: usize = 0;
+
+		// Print results
+		if get_both {
+			println!("Pulling {} & {} list for {}",
+				Purple.bold().paint("VOD"), Purple.bold().paint("Clip"), channel.display_name);
+		} else if get_vods {
+			println!("Pulling {} list for {}", Purple.bold().paint("VOD"), channel.display_name);
+		} else if get_clips {
+			println!("Pulling {} list for {}", Purple.bold().paint("Clip"), channel.display_name);
+		}
+
 		// Grab VOD info
 		if get_vods {
 			// Create VOD directory for channel.
 			let mut channel_dir = vods_dir.clone();
 			channel_dir.push(&channel.login);
 			util::create_dir(&channel_dir)?;
-			// Pull VODs from Twitch.
-			
+			// Pull VOD data from Twitch.
+			let mut vods = twitch::get_channel_vods(channel, &client, &client_id, &client_token)?;
+			vod_count = vods.len();
+			for _ in 0..vods.len() {
+				let vod = vods.pop().unwrap();
+				if vod.thumbnail_url.is_empty() {
+					videos.push(twitch::VideoType::Vod(vod));
+				}
+			}
 		}
 
 		// Grab Clip info
@@ -62,38 +86,62 @@ pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::Ex
 			let mut channel_dir = vods_dir.clone();
 			channel_dir.push(&channel.login);
 			util::create_dir(&channel_dir)?;
-
+			// Pull Clip data from Twitch.
+			let mut clips = twitch::get_channel_clips(channel, &client, &client_id, &client_token)?;
+			clip_count = clips.len();
+			for _ in 0..clips.len() {
+				let clip = clips.pop().unwrap();
+				if clip.thumbnail_url.is_empty() {
+					videos.push(twitch::VideoType::Clip(clip));
+				}
+			}
 		}
 
 		// Print results
-		if get_both {
-
-		} else if get_vods {
-
-		} else if get_clips {
-
+		if get_vods {
+			println!("{} to download: {}",
+				Purple.bold().paint("VODs"),
+				Cyan.bold().paint(format!("{}", vod_count))
+			);
+			total_vod_count += vod_count;
 		}
+		if get_clips {
+			println!("{} to download: {}",
+				Purple.bold().paint("Clips"),
+				Cyan.bold().paint(format!("{}", clip_count))
+			);
+			total_clip_count += clip_count;
+		}
+		if get_both {
+			println!("{} to download: {}",
+				Purple.bold().paint("Videos"),
+				Cyan.bold().paint(format!("{}", vod_count + clip_count))
+			);
+		}
+		println!();
 	}
 
-	println!("pull-type: {}", pull_type);
-	println!("temp:  {}", temp_dir.display());
-	println!("vods:  {}", vods_dir.display());
-	println!("clips: {}", clips_dir.display());
-	println!();
-	print!("id: {} | ", client_id);
-	print!("secret: {} | ", client_secret);
-	print!("token: {}", client_token);
-	println!(); println!();
-	print!("channels: ");
-	for name in channel_ids.iter() {
-		print!("{} ", name);
+	// Print total results
+	if get_vods {
+		println!("Total {} to download: {}",
+			Purple.bold().paint("VODs"),
+			Cyan.bold().paint(format!("{}", total_vod_count))
+		);
+	}
+	if get_clips {
+		println!("Total {} to download: {}",
+			Purple.bold().paint("VODs"),
+			Cyan.bold().paint(format!("{}", total_clip_count))
+		);
+	}
+	if get_both {
+		println!("Total {} to download: {}",
+			Purple.bold().paint("Videos"),
+			Cyan.bold().paint(format!("{}", total_vod_count + total_clip_count))
+		);
 	}
 	println!();
-	print!("found: ");
-	for channel in channels.iter() {
-		print!("{} ", channel.login);
-	}
-	println!();
+
 
 	// All done, let's bounce
 	Ok(())

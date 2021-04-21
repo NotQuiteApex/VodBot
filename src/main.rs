@@ -7,7 +7,7 @@ extern crate dirs;
 extern crate serde_json;
 extern crate ansi_term;
 
-use ansi_term::Color::{Red, Yellow};
+use ansi_term::Color::{Red, Yellow, Purple, White};
 use clap::{Arg, App, SubCommand};
 
 mod util;
@@ -90,16 +90,23 @@ fn deffered_main() -> Result<(), util::ExitMsg> {
 		// All done, parse input and get matches.
 		.get_matches();
 	
+	println!("{}", Purple.bold().paint(format!(
+			"* VodBot {} (c) 2020-21 {} *", 
+			VERSION.unwrap_or("VERSION UNKNOWN"), 
+			AUTHORS.unwrap_or("AUTHORS UNKNOWN")
+		))
+	);
+	
 	// Load config.
 	let mut default_config_path = vodbot_dir.clone();
 	default_config_path.push("conf.json");
 
-	let config_path = Path::new(
-		matches.value_of("config")
-		.unwrap_or(default_config_path.to_str().unwrap()));
+	print!("{}", White.dimmed().paint("Loading config... "));
+	let config_path = Path::new( matches.value_of("config")
+		.unwrap_or(default_config_path.to_str().unwrap()) );
 	
 	if !config_path.exists() {
-		println!("Could not find config, attempting to create one...");
+		println!("{}", White.dimmed().paint("Could not find config, attempting to create one..."));
 		util::create_conf(config_path)?;
 	}
 
@@ -119,15 +126,15 @@ fn deffered_main() -> Result<(), util::ExitMsg> {
 
 
 fn main() {
-	let res = deffered_main();
-
-	if res.is_err() {
-		let err = res.unwrap_err();
-		println!("{} {} {}",
-			Red.bold().paint("Error! ("),
-			Yellow.bold().paint(format!("{}", err.code as i32)),
-			Red.bold().paint(format!(") {}", err.msg))
-		);
-		std::process::exit(err.code as i32);
-	}
+	std::process::exit(match deffered_main() {
+		Ok(()) => 0,
+		Err(err) => {
+			println!("\n{} ({}) {}",
+				Red.bold().paint("Error!"),
+				Yellow.bold().paint((err.code as u32).to_string()),
+				Red.bold().paint(err.msg)
+			);
+			err.code as i32
+		}
+	});
 }
