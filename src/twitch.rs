@@ -149,13 +149,13 @@ pub fn get_channels(channel_ids: &Vec<String>, cl: &Client, cl_id: &String, cl_t
 
 
 pub fn get_channel_vods(channel: &Channel, cl: &Client, cl_id: &String, cl_tkn: &String)
--> Result<Vec<VodData>, ExitMsg> {
+-> Result<Vec<VideoType>, ExitMsg> {
 	let base_url = format!(
 		"https://api.twitch.tv/helix/videos?user_id={}&first=100&type=archive",
 		channel.id
 	);
 
-	let mut vods: Vec<VodData> = Vec::new();
+	let mut vods: Vec<VideoType> = Vec::new();
 
 	let mut pagination: Option<String> = None;
 	loop {
@@ -199,7 +199,7 @@ pub fn get_channel_vods(channel: &Channel, cl: &Client, cl_id: &String, cl_tkn: 
 			for _ in 0..new_vods.len() {
 				let vod = new_vods.pop().unwrap();
 				if !vod.thumbnail_url.is_empty() {
-					vods.push(vod);
+					vods.push(VideoType::Vod(vod));
 				}
 			}
 		} else {
@@ -219,13 +219,13 @@ pub fn get_channel_vods(channel: &Channel, cl: &Client, cl_id: &String, cl_tkn: 
 
 
 pub fn get_channel_clips(channel: &Channel, cl: &Client, cl_id: &String, cl_tkn: &String)
--> Result<Vec<ClipData>, ExitMsg> {
+-> Result<Vec<VideoType>, ExitMsg> {
 	let base_url = format!(
 		"https://api.twitch.tv/helix/clips?broadcaster_id={}&first=100",
 		channel.id
 	);
 
-	let mut clips: Vec<ClipData> = Vec::new();
+	let mut clips: Vec<VideoType> = Vec::new();
 
 	let mut pagination: Option<String> = None;
 	loop {
@@ -269,7 +269,7 @@ pub fn get_channel_clips(channel: &Channel, cl: &Client, cl_id: &String, cl_tkn:
 			for _ in 0..new_clips.len() {
 				let vod = new_clips.pop().unwrap();
 				if !vod.thumbnail_url.is_empty() {
-					clips.push(vod);
+					clips.push(VideoType::Clip(vod));
 				}
 			}
 		} else {

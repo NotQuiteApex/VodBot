@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use super::super::twitch;
 use super::super::util;
 
-use ansi_term::Color::{Purple, Cyan, White};
+use ansi_term::Color::{Yellow, Purple, Cyan, White};
 
 
 pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::ExitMsg> {
@@ -56,11 +56,14 @@ pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::Ex
 		// Print results
 		if get_both {
 			println!("Pulling {} & {} list for {}",
-				Purple.bold().paint("VOD"), Purple.bold().paint("Clip"), channel.display_name);
+				Purple.bold().paint("VOD"), Purple.bold().paint("Clip"), 
+				Yellow.bold().paint(&channel.display_name));
 		} else if get_vods {
-			println!("Pulling {} list for {}", Purple.bold().paint("VOD"), channel.display_name);
+			println!("Pulling {} list for {}", Purple.bold().paint("VOD"),
+				Yellow.bold().paint(&channel.display_name));
 		} else if get_clips {
-			println!("Pulling {} list for {}", Purple.bold().paint("Clip"), channel.display_name);
+			println!("Pulling {} list for {}", Purple.bold().paint("Clip"),
+				Yellow.bold().paint(&channel.display_name));
 		}
 
 		// Grab VOD info
@@ -72,12 +75,7 @@ pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::Ex
 			// Pull VOD data from Twitch.
 			let mut vods = twitch::get_channel_vods(channel, &client, &client_id, &client_token)?;
 			vod_count = vods.len();
-			for _ in 0..vods.len() {
-				let vod = vods.pop().unwrap();
-				if vod.thumbnail_url.is_empty() {
-					videos.push(twitch::VideoType::Vod(vod));
-				}
-			}
+			videos.append(&mut vods);
 		}
 
 		// Grab Clip info
@@ -89,12 +87,7 @@ pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::Ex
 			// Pull Clip data from Twitch.
 			let mut clips = twitch::get_channel_clips(channel, &client, &client_id, &client_token)?;
 			clip_count = clips.len();
-			for _ in 0..clips.len() {
-				let clip = clips.pop().unwrap();
-				if clip.thumbnail_url.is_empty() {
-					videos.push(twitch::VideoType::Clip(clip));
-				}
-			}
+			videos.append(&mut clips);
 		}
 
 		// Print results
@@ -140,8 +133,17 @@ pub fn run(args: &clap::ArgMatches, config: util::Config) -> Result<(), util::Ex
 			Cyan.bold().paint(format!("{}", total_vod_count + total_clip_count))
 		);
 	}
-	println!();
 
+	// Time to download all the videos
+	for video in videos.iter() {
+		if let twitch::VideoType::Vod(vod) = video {
+			
+		} else if let twitch::VideoType::Clip(clip) = video {
+
+		}
+	}
+
+	println!("{}", Purple.bold().paint("\n* All done, goodbye! *"));
 
 	// All done, let's bounce
 	Ok(())
